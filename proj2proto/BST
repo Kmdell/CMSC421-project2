@@ -1,0 +1,42 @@
+#include <stdio.h>
+
+typedef struct queueNode {
+    int data;
+    long length; 
+} queueNode;
+
+typedef struct BSTNode {
+    unsigned long ID;
+    struct queueNode *begin, *end;
+    long queueLength;
+    struct BSTNode *left, *right;
+} BSTNode;
+
+BSTNode *newBSTNode(unsigned long id) {
+    BSTNode *new = (BSTNode *)malloc(sizeof(BSTNode));
+    new->ID = id;
+    new->begin = new->end = new->left = new->right = NULL;
+    new->queueLength = 0;
+}
+
+int insert(BSTNode *node, unsigned long id) {
+    if (node->ID > id) {
+        if (node->left != NULL) {
+            return insert(node->left, id);
+        }
+        node->left = newBSTNode(id);
+        return 0;
+    } else if (node->ID < id) {
+        if (node->right != NULL) {
+            return insert(node->right, id);
+        }
+        node->right = newBSTNode(id);
+        return 0;
+    } else {
+        return -1;
+    }
+}
+
+int main () {
+
+}
