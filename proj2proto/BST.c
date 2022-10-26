@@ -4,7 +4,7 @@
 typedef struct queueNode {
     int data;
     long length; 
-    queueNode *next;
+    struct queueNode *next;
 } queueNode;
 
 typedef struct BSTNode {
@@ -20,11 +20,21 @@ BSTNode *newBSTNode(unsigned long id) {
     new->begin = new->end = NULL;
     new->left = new->right = NULL;
     new->queueLength = 0;
+    return new;
 }
 
-BSTNode *deleteBSTNode(BSTNode *node) {
-    // need to work refi;; tree capabilites
-    return node;
+int deleteBSTNode(BSTNode *node) {
+    // need to find maximum value return it
+    BSTNode *temp = node->left;
+    while (temp->right != NULL) {
+        temp = temp->right;
+    }
+    node->ID = temp->ID;
+    node->begin = temp->begin;
+    node->end = temp->end;
+    node->queueLength = temp->queueLength;
+    return 0;
+    // free the current node
 }
 
 int create_mailbox(BSTNode *node, unsigned long id) {
@@ -87,9 +97,20 @@ int delete_mailbox(BSTNode *node, int id) {
             free(temp);
             temp = NULL;
         } else {
-            node = deleteBSTNode(node);
+            queueNode *temp = node->begin->next;
+            // while the begin is not null empty the mailbox
+            while (node->begin != NULL) {
+                free(node->begin);
+                node->begin = temp;
+                temp = temp->next;
+            }
+            if (deleteBSTNode(node) != 0) {
+                return -1;
+            }
+            delete_mailbox(node->left, node->ID);
         }
     }
+    return 0;
 }
 
 int main () {
