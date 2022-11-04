@@ -79,17 +79,17 @@ int shutdown_mailbox(BSTNode **node) {
         return 0;
     }
     /*check children first*/
-    if (shutdown_mailbox(&defNode->right) == 0 && shutdown_mailbox(&defNode->left) == 0) {
-        temp = defNode->begin;
-        /*while the begin is not null empty the mailbox*/
-        while (temp != NULL) {
-            defNode->begin = temp;
-            free(defNode->begin->data);
-            defNode->begin->data = NULL;
-            free(defNode->begin);
-            defNode->begin = NULL;
-            temp = temp->next;
-        }
+    shutdown_mailbox(&defNode->left);
+    shutdown_mailbox(&defNode->right);
+    temp = defNode->begin;
+    /*while the begin is not null empty the mailbox*/
+    while (temp != NULL) {
+        defNode->begin = temp;
+        temp = temp->next;
+        free(defNode->begin->data);
+        defNode->begin->data = NULL;
+        free(defNode->begin);
+        defNode->begin = NULL;
     }
     /*free the node and set to null for security*/
     free(*node);
@@ -98,8 +98,7 @@ int shutdown_mailbox(BSTNode **node) {
 }
 
 int mailbox_destroy(BSTNode **node, unsigned long id) {
-    BSTNode *defNode = *node; 
-    BSTNode *tempNode = NULL;
+    BSTNode *defNode = *node;
     queueNode *temp = NULL;
     /*if find a null node then return -1 because it aint there chief*/
     if (*node == NULL) {
@@ -112,29 +111,30 @@ int mailbox_destroy(BSTNode **node, unsigned long id) {
         return mailbox_destroy(&defNode->right, id);
     } else {
         /*run algorithm for deleting the mailbox*/
-        /* if left side is null then put right side there*/
+        temp = defNode->begin;
+        /*while the begin is not null empty the mailbox*/
+        while (temp != NULL) {
+            defNode->begin = temp;
+            temp = temp->next;
+            free(defNode->begin->data);
+            defNode->begin->data = NULL;
+            free(defNode->begin);
+            defNode->begin = NULL;
+        }
         if (defNode->left == NULL) {
-            tempNode = defNode;
+            /*If the left is NULL then set the current node to the right node*/
             *node = defNode->right;
-            free(tempNode);
-            tempNode = NULL;
-        /* if left side is null then put right side there*/
+            free(defNode);
+            defNode = NULL;
         } else if (defNode->right == NULL) {
-            tempNode = defNode;
+            /*If the right node is NULL then set to the left node*/
             *node = defNode->left;
-            free(tempNode);
-            tempNode = NULL;
+            free(defNode);
+            defNode = NULL;
         } else {
-            temp = defNode->begin;
-            /*while the begin is not null empty the mailbox*/
-            while (temp != NULL) {
-                defNode->begin = temp;
-                free(defNode->begin->data);
-                free(defNode->begin);
-                temp = temp->next;
-            }
-            /*set node to new non deleted node*/
+            /*If neither are NULL then gotta do it the hard way*/
             *node = deleteBSTNode(node);
+            defNode = *node;
             mailbox_destroy(&defNode->left, defNode->ID);
         }
     }
@@ -227,6 +227,7 @@ int mailbox_recv(BSTNode **node, unsigned long id, unsigned char **msg, long len
                 free(defNode->begin);
                 defNode->begin = NULL;
                 defNode->end = NULL;
+                defNode->queueLength = 0;
             } else {
                 temp = defNode->begin;
                 /*get the lowest length*/
@@ -239,6 +240,7 @@ int mailbox_recv(BSTNode **node, unsigned long id, unsigned char **msg, long len
                 free(defNode->begin->data);
                 defNode->begin->data = NULL;
                 defNode->begin = defNode->begin->next;
+                defNode->queueLength--;
                 /*free the queuenode*/
                 free(temp);
                 temp = NULL;
@@ -272,7 +274,7 @@ int message_delete(BSTNode **node, unsigned long id) {
                 /*set queue length to zero*/
                 defNode->queueLength = 0;
             } else {
-                temp =  defNode->begin;
+                temp = defNode->begin;
                 /*free the data in the queue node*/
                 free(defNode->begin->data);
                 defNode->begin->data = NULL;
@@ -287,7 +289,7 @@ int message_delete(BSTNode **node, unsigned long id) {
         }
     }
     return -1;
-}
+}        
 
 int mailbox_length(BSTNode **node, unsigned long id) {
     BSTNode *defNode = *node;
@@ -329,8 +331,9 @@ int printInorder(BSTNode *node) {
 int main () {
     BSTNode* root = NULL;
     /*#ifdef DEBUG*/
-    unsigned char *str = (unsigned char *)"Message";
+    unsigned char *srcStr = (unsigned char *)"Message";
     int strLen = 8;
+    unsigned char *dstStr0 = (unsigned char *)malloc(sizeof(9));
     /*#endif*/
     if (create_mailbox(&root, 11) != 0) {
         printf("Error when create_mailbox root node\n");
@@ -340,6 +343,9 @@ int main () {
     }
     if (create_mailbox(&root, 5) != 0) {
         printf("Error when create_mailboxing one to left\n");
+    }
+    if (create_mailbox(&root, 5) != 0) {
+        printf("Passed a failure to create a new mailbox\n");
     }
     if (create_mailbox(&root, 17) != 0) {
         printf("Error when create_mailboxing one to right\n");
@@ -373,38 +379,76 @@ int main () {
     printf("Run first in order print: \n");
     printInorder(root);
     if(mailbox_destroy(&root, 11) != 0) {
-        printf("Something went wrong when deleting the mailbox");
+        printf("Something went wrong when deleting the mailbox\n");
     }
-    printf("Run second in order print: \n");
+    if(mailbox_destroy(&root, 11) != 0) {
+        printf("Passed failure on trying to destroy a mailbox\n");
+    }
+    printf("Run second in order print: \n\n");
     printInorder(root);
-    
-    #ifdef DEBUG
-    if (mailbox_send(&root, 1, str, strlen(str)) != 0) {
-        printf("Error sending message to mailbox");
+    if (mailbox_send(&root, 1, srcStr, strLen) != 0) {
+        printf("Error sending message to mailbox\n");
     }
-    if (mailbox_send(&root, 1, str, strlen(str)) != 0) {
-        printf("Error sending message to mailbox");
+    if (mailbox_send(&root, 200, srcStr, strLen) != 0) {
+        printf("Passed failing to send message\n");
     }
-    if (mailbox_send(&root, 15, str, strlen(str)) != 0) {
-        printf("Error sending message to mailbox");
+    if (mailbox_send(&root, 1, srcStr, strLen) != 0) {
+        printf("Error sending message to mailbox\n");
     }
-    #endif
-    if (mailbox_send(&root, 19, str, strLen) != 0) {
-        printf("Error sending message to mailbox");
+    if (mailbox_send(&root, 15, srcStr, strLen) != 0) {
+        printf("Error sending message to mailbox\n");
     }
-    printf("Printing inorder after adding mail\n");
+    if (mailbox_send(&root, 15, srcStr, strLen) != 0) {
+        printf("Error sending message to mailbox\n");
+    }
+    if (mailbox_send(&root, 19, srcStr, strLen) != 0) {
+        printf("Error sending message to mailbox\n");
+    }
+    if (mailbox_send(&root, 19, srcStr, strLen) != 0) {
+        printf("Error sending message to mailbox\n");
+    }
+    printf("Printing inorder after adding mail\n\n");
     printInorder(root);
-    #ifdef DEBUG
     if (mailbox_destroy(&root, 19) != 0) {
         printf("Error when destroying mailbox\n");
     }
-    #endif
-    printInorder(root);
-    if (shutdown_mailbox(&root) != 0) {
-        printf("Error while shutting down all mailboxes");
+    
+    if (mailbox_recv(&root, 15, &dstStr0, strLen) != strLen) {
+        printf("Error when receiving message to mailbox\n");
     }
-    printf("Printing after shutdown: \n");
+    if (mailbox_recv(&root, 15, &dstStr0, strLen) != strLen) {
+        printf("Error when receiving message to mailbox\n");
+    }
+    if (mailbox_recv(&root, 15, &dstStr0, strLen) != strLen) {
+        printf("Passed failing to receive message\n");
+    }
+
+    printf("Printing the length of the queue for an empty node and for anode that has stuff %d, %d\n", mailbox_length(&root, 1), mailbox_length(&root, 5));
+
+    printf("Printing inorder after receiving mail\n\n");
     printInorder(root);
     
+    if (message_delete(&root, 1) != 0) {
+        printf("Something went wrong when we deleted the most recent message\n");
+    }
+    if (message_delete(&root, 1) != 0) {
+        printf("Something went wrong when we deleted the most recent message\n");
+    }
+    if (message_delete(&root, 1) != 0) {
+        printf("passed failing to delete a message\n");
+    }
+
+    printf("Printing inorder after deleting messages\n\n");
+    printInorder(root);
+
+    if (shutdown_mailbox(&root) != 0) {
+        printf("Error while shutting down all mailboxes\n");
+    }
+    printf("Printing after shutdown: \n\n");
+    printInorder(root);
+    
+    free(dstStr0);
+    dstStr0 = NULL;
+
     return 0;
 }   
