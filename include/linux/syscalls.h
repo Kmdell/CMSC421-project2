@@ -1387,4 +1387,8 @@ asmlinkage long sys_mailbox_shutdown(void);
 asmlinkage long sys_mailbox_create(unsigned long id);
 asmlinkage long sys_mailbox_destroy(unsigned long id);
 asmlinkage long sys_mailbox_count(unsigned long id);
+asmlinkage long sys_mailbox_send(unsigned long id, const unsigned char __user *msg, long len);
+asmlinkage long sys_mailbox_recv(unsigned long id, unsigned char __user *msg, long len);
+asmlinkage long sys_message_delete(unsigned long id);
+asmlinkage long sys_mailbox_length(unsigned long id);
 #endif
