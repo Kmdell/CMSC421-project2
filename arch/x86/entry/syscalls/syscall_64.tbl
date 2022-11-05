@@ -413,5 +413,10 @@
 545	x32	execveat		compat_sys_execveat
 546	x32	preadv2			compat_sys_preadv64v2
 547	x32	pwritev2		compat_sys_pwritev64v2
+548	common	mailbox_init		sys_mailbox_init
+549	common	mailbox_shutdown	sys_mailbox_shutdown
+550	common	mailbox_create		sys_mailbox_create
+551	common	mailbox_destroy		sys_mailbox_destroy
+552	common	mailbox_count		sys_mailbox_count
 # This is the end of the legacy x32 range.  Numbers 548 and above are
 # not special and are not to be used for x32-specific syscalls.
