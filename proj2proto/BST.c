@@ -333,7 +333,7 @@ int main () {
     /*#ifdef DEBUG*/
     unsigned char *srcStr = (unsigned char *)"Message";
     int strLen = 8;
-    unsigned char *dstStr0 = (unsigned char *)malloc(sizeof(9));
+    unsigned char *dstStr0 = (unsigned char *)malloc(8 * sizeof(unsigned char));
     /*#endif*/
     if (create_mailbox(&root, 11) != 0) {
         printf("Error when create_mailbox root node\n");
