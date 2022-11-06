@@ -26,6 +26,7 @@ typedef struct BSTNode {
 } BSTNode;
 
 static BSTNode *Root_Node = NULL;
+struct mutex kmutex;
 
 BSTNode *knew_node(unsigned long id) {
     BSTNode *new = (BSTNode *)kzalloc(sizeof(BSTNode), GFP_KERNEL);
@@ -361,9 +362,15 @@ long kmailbox_length(BSTNode *node, unsigned long id) {
 }
 
 SYSCALL_DEFINE0(mailbox_init) {
+    mutex_init(&kmutex);
+    if (mutex_trylock(&kmutex) != 1) {
+        printk("Could not get the mutex lock\n");
+        return -EPERM;
+    }
     if (Root_Node != NULL) {
         printk("A Mailbox is Already Initialized\n");
-        return 0;
+        mutex_unlock(&kmutex);
+        return 0-ENOMEM;
     }
     /*Initialize the mailbox with a dumby variable*/
     Root_Node = kzalloc(sizeof(BSTNode), GFP_KERNEL);
@@ -372,110 +379,183 @@ SYSCALL_DEFINE0(mailbox_init) {
     Root_Node->queueLength = 0;
     Root_Node->left = Root_Node->right = NULL;
     printk("Initialized the Mailbox System\n");
+    mutex_unlock(&kmutex);
     return 0;
 }
 
 SYSCALL_DEFINE0(mailbox_shutdown) {
+    long rc = 0;
+    if (mutex_trylock(&kmutex) != 1) {
+        printk("Could not get the mutex lock\n");
+        return -EPERM;
+    }
     if (Root_Node == NULL) {
+        printk("Root Node is NULL\n");
+        mutex_unlock(&kmutex);
         return -ENODEV;
     }
     printk("Shutting Down Mailbox System\n");
-    return kmailbox_shutdown(&Root_Node);
+    rc = kmailbox_shutdown(&Root_Node);
+    mutex_unlock(&kmutex);
+    return rc;
 }
 
 SYSCALL_DEFINE1(mailbox_create, unsigned long, id) {
+    long rc = 0;
+    if (mutex_trylock(&kmutex) != 1) {
+        printk("Could not get the mutex lock\n");
+        return -EPERM;
+    }
     if (id == 0) {
         printk("Mailbox System Refuses ID of 0\n");
+        mutex_unlock(&kmutex);
         return -EINVAL;
     }
     /*If root is null then we return that the mailbox system is not initialized*/
     if (Root_Node == NULL) {
         printk("Mailbox System must be Initialized\n");
+        mutex_unlock(&kmutex);
         return -ENODEV;
     }
     /*If the root node is the default node then we */
-    printk("Creating a Mailbox with ID: %ld\n", id);
     if (Root_Node->ID == 0) {
         Root_Node->ID = id;
+        mutex_unlock(&kmutex);
         return 0;
     }
-    return kmailbox_create(&Root_Node, id);
+    rc = kmailbox_create(&Root_Node, id);
+    mutex_unlock(&kmutex);
+    return rc;
 }
 
 SYSCALL_DEFINE1(mailbox_destroy, unsigned long, id) {
+    long rc = 0;
+    if (mutex_trylock(&kmutex) != 1) {
+        printk("Could not get the mutex lock\n");
+        return -EPERM;
+    }
     if (id == 0) {
         printk("Mailbox System Refuses ID of 0\n");
+        mutex_unlock(&kmutex);
         return -EINVAL;
     }
     /*If root is null then we return that the mailbox system is not initialized*/
     if (Root_Node == NULL) {
         printk("Mailbox System must be Initialized\n");
+        mutex_unlock(&kmutex);
         return -ENODEV;
     }
-    return kmailbox_destroy(&Root_Node, id);
+    rc = kmailbox_destroy(&Root_Node, id);
+    mutex_unlock(&kmutex);
+    return rc;
 }
 
 SYSCALL_DEFINE1(mailbox_count, unsigned long, id) {
+    long rc = 0;
+    if (mutex_trylock(&kmutex) != 1) {
+        printk("Could not get the mutex lock\n");
+        return -EPERM;
+    }
     if (id == 0) {
         printk("Mailbox System Refuses ID of 0\n");
+        mutex_unlock(&kmutex);
         return -EINVAL;
     }
     /*If root is null then we return that the mailbox system is not initialized*/
     if (Root_Node == NULL) {
         printk("Mailbox System must be Initialized\n");
+        mutex_unlock(&kmutex);
         return -ENODEV;
     }
-    return kmailbox_count(Root_Node, id);
+    rc = kmailbox_count(Root_Node, id);
+    mutex_unlock(&kmutex);
+    return rc;
 }
 
 SYSCALL_DEFINE3(mailbox_send, unsigned long, id, const unsigned char __user *, msg, long, len) {
+    long rc = 0;
+    if (mutex_trylock(&kmutex) != 1) {
+        printk("Could not get the mutex lock\n");
+        return -EPERM;
+    }
     if (id == 0) {
         printk("Mailbox System Refuses ID of 0\n");
+        mutex_unlock(&kmutex);
         return -EINVAL;
     }
     /*If root is null then we return that the mailbox system is not initialized*/
     if (Root_Node == NULL) {
         printk("Mailbox System must be Initialized\n");
+        mutex_unlock(&kmutex);
         return -ENODEV;
     }
-    return kmailbox_send(&Root_Node, id, msg, len);
+    rc = kmailbox_send(&Root_Node, id, msg, len);
+    mutex_unlock(&kmutex);
+    return rc;
 }
 
 SYSCALL_DEFINE3(mailbox_recv, unsigned long, id, unsigned char __user *, msg, long, len) {
+    long rc = 0;
+    if (mutex_trylock(&kmutex) != 1) {
+        printk("Could not get the mutex lock\n");
+        return -EPERM;
+    }
     if (id == 0) {
         printk("Mailbox System Refuses ID of 0\n");
+        mutex_unlock(&kmutex);
         return -EINVAL;
     }
     /*If root is null then we return that the mailbox system is not initialized*/
     if (Root_Node == NULL) {
         printk("Mailbox System must be Initialized\n");
+        mutex_unlock(&kmutex);
         return -ENODEV;
     }
-    return kmailbox_recv(&Root_Node, id, msg, len);
+    rc = kmailbox_recv(&Root_Node, id, msg, len);
+    mutex_unlock(&kmutex);
+    return rc;
 }
 
 SYSCALL_DEFINE1(message_delete, unsigned long, id) {
+    long rc = 0;
+    if (mutex_trylock(&kmutex) != 1) {
+        printk("Could not get the mutex lock\n");
+        return -EPERM;
+    }
     if (id == 0) {
         printk("Mailbox System Refuses ID of 0\n");
+        mutex_unlock(&kmutex);
         return -EINVAL;
     }
     /*If root is null then we return that the mailbox system is not initialized*/
     if (Root_Node == NULL) {
         printk("Mailbox System must be Initialized\n");
+        mutex_unlock(&kmutex);
         return -ENODEV;
     }
-    return kmessage_delete(&Root_Node, id);
+    rc = kmessage_delete(&Root_Node, id);
+    mutex_unlock(&kmutex);
+    return rc;
 }
 
 SYSCALL_DEFINE1(mailbox_length, unsigned long, id) {
+    long rc = 0;
+    if (mutex_trylock(&kmutex) != 1) {
+        printk("Could not get the mutex lock\n");
+        return -EPERM;
+    }
     if (id == 0) {
         printk("Mailbox System Refuses ID of 0\n");
+        mutex_unlock(&kmutex);
         return -EINVAL;
     }
     /*If root is null then we return that the mailbox system is not initialized*/
     if (Root_Node == NULL) {
         printk("Mailbox System must be Initialized\n");
+        mutex_unlock(&kmutex);
         return -ENODEV;
     }
-    return kmailbox_length(Root_Node, id);
+    rc = kmailbox_length(Root_Node, id);
+    mutex_unlock(&kmutex);
+    return rc;
 }
