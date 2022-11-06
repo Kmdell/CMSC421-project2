@@ -385,6 +385,7 @@ SYSCALL_DEFINE0(mailbox_init) {
 
 SYSCALL_DEFINE0(mailbox_shutdown) {
     long rc = 0;
+    printk("Mailbox Shutdown has been called\n");
     if (mutex_trylock(&kmutex) != 1) {
         printk("Could not get the mutex lock\n");
         return -EPERM;
