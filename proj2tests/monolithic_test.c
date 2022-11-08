@@ -2,7 +2,6 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
-#include <linux/kernel.h>
 #include <sys/syscall.h>
 
 #define __NR_init 548

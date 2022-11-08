@@ -9,9 +9,6 @@
 #include <linux/errno.h>
 #include <linux/mutex.h>
 
-/*TODO: Implement Mutexes to lock the resources*/
-/*      Build a user space test program to ensure that the program is working properly*/
-
 typedef struct queueNode {
     unsigned char *data;
     long length; 
